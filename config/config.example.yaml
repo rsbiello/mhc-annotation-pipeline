@@ -1,0 +1,23 @@
+genome: "/absolute/path/species.genome.fa"
+reference_proteins: "/absolute/path/mhc_reference_proteins.fa"
+
+# Optional. Leave as empty strings when unavailable.
+existing_gff: ""
+annotated_proteome: ""
+
+threads: 16
+
+blast:
+  tblastn_evalue: 1e-3
+  blastp_evalue: 1e-5
+  max_target_seqs: 1000
+
+miniprot:
+  outn: 50
+  outs: 0.5
+  outc: 0.25
+
+reconciliation:
+  cluster_distance: 20000
+  overlap_flank: 10000
+

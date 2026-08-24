@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use this workflow, cite the repository release and the underlying software."
+title: "Avian MHC reference-annotation pipeline"
+type: software
+version: 0.1.0
+date-released: 2026-08-24
+license: MIT
+authors:
+  - family-names: "Your surname"
+    given-names: "Your given name"
+repository-code: "https://github.com/YOUR_USERNAME/avian-mhc-annotation-pipeline"
+

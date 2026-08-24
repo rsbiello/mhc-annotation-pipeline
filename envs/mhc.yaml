@@ -1,0 +1,14 @@
+name: avian-mhc-annotation
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python>=3.11
+  - snakemake-minimal>=8
+  - blast>=2.15
+  - miniprot>=0.13
+  - samtools>=1.20
+  - gffread>=0.12
+  - seqkit>=2.8
+

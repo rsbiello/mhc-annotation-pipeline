@@ -1,0 +1,176 @@
+from pathlib import Path
+
+configfile: "config/config.example.yaml"
+
+GENOME = config["genome"]
+PROTEINS = config["reference_proteins"]
+GFF = config.get("existing_gff", "")
+ANNOTATED_PROTEOME = config.get("annotated_proteome", "")
+THREADS = int(config.get("threads", 8))
+
+BLAST = config.get("blast", {})
+TBLASTN_EVALUE = BLAST.get("tblastn_evalue", "1e-3")
+BLASTP_EVALUE = BLAST.get("blastp_evalue", "1e-5")
+MAX_TARGETS = int(BLAST.get("max_target_seqs", 1000))
+
+MP = config.get("miniprot", {})
+MP_OUTN = int(MP.get("outn", 50))
+MP_OUTS = float(MP.get("outs", 0.5))
+MP_OUTC = float(MP.get("outc", 0.25))
+
+REC = config.get("reconciliation", {})
+CLUSTER_DISTANCE = int(REC.get("cluster_distance", 20000))
+OVERLAP_FLANK = int(REC.get("overlap_flank", 10000))
+
+rule all:
+    input:
+        "results/00_qc/genome.fa.fai",
+        "results/00_qc/reference_protein_lengths.tsv",
+        "results/01_blastp/mhc_vs_annotated_proteome.tsv",
+        "results/02_tblastn/mhc_vs_genome.tsv",
+        "results/02_tblastn/tblastn_hsps.bed",
+        "results/03_miniprot/mhc.miniprot.gff3",
+        "results/03_miniprot/miniprot_models.bed",
+        "results/04_reconciliation/candidate_loci.tsv",
+        "results/04_reconciliation/candidate_loci.bed",
+        "results/04_reconciliation/blast_only_candidates.bed",
+        "results/04_reconciliation/miniprot_only_candidates.bed",
+        "results/04_reconciliation/supported_by_both.bed"
+
+rule genome_index:
+    input: GENOME
+    output: "results/00_qc/genome.fa.fai"
+    conda: "../envs/mhc.yaml"
+    shell:
+        r"""
+        mkdir -p results/00_qc
+        ln -sfn "{input}" results/00_qc/genome.fa
+        samtools faidx results/00_qc/genome.fa
+        """
+
+rule protein_lengths:
+    input: PROTEINS
+    output: "results/00_qc/reference_protein_lengths.tsv"
+    conda: "../envs/mhc.yaml"
+    shell:
+        "mkdir -p results/00_qc && seqkit fx2tab -n -l {input} > {output}"
+
+rule nucleotide_blast_database:
+    input: GENOME
+    output:
+        "results/02_tblastn/genome_db.nhr",
+        "results/02_tblastn/genome_db.nin",
+        "results/02_tblastn/genome_db.nsq"
+    conda: "../envs/mhc.yaml"
+    shell:
+        "mkdir -p results/02_tblastn && makeblastdb -in {input} -dbtype nucl "
+        "-out results/02_tblastn/genome_db"
+
+rule tblastn:
+    input:
+        query=PROTEINS,
+        db="results/02_tblastn/genome_db.nhr"
+    output: "results/02_tblastn/mhc_vs_genome.tsv"
+    threads: THREADS
+    conda: "../envs/mhc.yaml"
+    shell:
+        "tblastn -query {input.query} -db results/02_tblastn/genome_db "
+        "-evalue {TBLASTN_EVALUE} -seg yes -soft_masking true "
+        "-num_threads {threads} -max_target_seqs {MAX_TARGETS} "
+        "-outfmt '6 qseqid sseqid pident length qlen qstart qend sstart send sstrand evalue bitscore qcovhsp' "
+        "-out {output}"
+
+rule miniprot_index:
+    input: GENOME
+    output: "results/03_miniprot/genome.mpi"
+    threads: THREADS
+    conda: "../envs/mhc.yaml"
+    shell:
+        "mkdir -p results/03_miniprot && miniprot -t {threads} -d {output} {input}"
+
+rule miniprot_align:
+    input:
+        index="results/03_miniprot/genome.mpi",
+        proteins=PROTEINS
+    output: "results/03_miniprot/mhc.miniprot.gff3"
+    threads: THREADS
+    conda: "../envs/mhc.yaml"
+    shell:
+        "miniprot -t {threads} -I --gff-only --aln "
+        "--outn {MP_OUTN} --outs {MP_OUTS} --outc {MP_OUTC} "
+        "{input.index} {input.proteins} > {output}"
+
+rule miniprot_to_bed:
+    input: "results/03_miniprot/mhc.miniprot.gff3"
+    output: "results/03_miniprot/miniprot_models.bed"
+    conda: "../envs/mhc.yaml"
+    script: "scripts/miniprot_gff_to_bed.py"
+
+rule prepare_annotated_proteome:
+    input:
+        genome=GENOME
+    output:
+        proteins="results/01_blastp/annotated_proteome.faa",
+        status="results/01_blastp/proteome_source.txt"
+    params:
+        supplied=ANNOTATED_PROTEOME,
+        gff=GFF
+    conda: "../envs/mhc.yaml"
+    shell:
+        r"""
+        mkdir -p results/01_blastp
+        if [ -n "{params.supplied}" ] && [ -s "{params.supplied}" ]; then
+            cp "{params.supplied}" {output.proteins}
+            echo "supplied annotated proteome: {params.supplied}" > {output.status}
+        elif [ -n "{params.gff}" ] && [ -s "{params.gff}" ]; then
+            gffread "{params.gff}" -g {input.genome} -y {output.proteins}
+            echo "translated from GFF3: {params.gff}" > {output.status}
+        else
+            : > {output.proteins}
+            echo "no existing annotation or proteome supplied" > {output.status}
+        fi
+        """
+
+rule blastp_annotation_audit:
+    input:
+        query=PROTEINS,
+        target="results/01_blastp/annotated_proteome.faa",
+        status="results/01_blastp/proteome_source.txt"
+    output:
+        hits="results/01_blastp/mhc_vs_annotated_proteome.tsv",
+        skipped="results/01_blastp/SKIPPED.txt"
+    threads: THREADS
+    conda: "../envs/mhc.yaml"
+    shell:
+        r"""
+        if [ -s {input.target} ]; then
+            makeblastdb -in {input.target} -dbtype prot -out results/01_blastp/proteome_db
+            blastp -query {input.query} -db results/01_blastp/proteome_db \
+              -evalue {BLASTP_EVALUE} -num_threads {threads} \
+              -max_target_seqs {MAX_TARGETS} \
+              -outfmt '6 qseqid sseqid pident length qlen slen qstart qend sstart send evalue bitscore qcovs' \
+              -out {output.hits}
+            : > {output.skipped}
+        else
+            : > {output.hits}
+            cp {input.status} {output.skipped}
+        fi
+        """
+
+rule reconcile:
+    input:
+        blast="results/02_tblastn/mhc_vs_genome.tsv",
+        miniprot="results/03_miniprot/miniprot_models.bed",
+        fai="results/00_qc/genome.fa.fai"
+    output:
+        hsps="results/02_tblastn/tblastn_hsps.bed",
+        table="results/04_reconciliation/candidate_loci.tsv",
+        candidates="results/04_reconciliation/candidate_loci.bed",
+        blast_only="results/04_reconciliation/blast_only_candidates.bed",
+        miniprot_only="results/04_reconciliation/miniprot_only_candidates.bed",
+        both="results/04_reconciliation/supported_by_both.bed"
+    params:
+        cluster_distance=CLUSTER_DISTANCE,
+        overlap_flank=OVERLAP_FLANK
+    conda: "../envs/mhc.yaml"
+    script: "scripts/reconcile_candidates.py"

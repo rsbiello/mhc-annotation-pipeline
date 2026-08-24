@@ -1,0 +1,4 @@
+query_id	family	species	reported_locus	accession	status	source
+MHCI|Gallus_gallus|BF2|NP_xxxxx|complete	MHCI	Gallus gallus	BF2	NP_xxxxx	complete	NCBI RefSeq
+MHCIIB|Close_species|unknown|XP_xxxxx|predicted	MHCIIB	Close species	unknown	XP_xxxxx	predicted	NCBI RefSeq
+

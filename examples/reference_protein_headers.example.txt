@@ -1,0 +1,8 @@
+>MHCI|Gallus_gallus|BF2|NP_xxxxx|complete
+>MHCI|Close_species|unknown|XP_xxxxx|predicted
+>MHCIIA|Close_species|unknown|XP_xxxxx|predicted
+>MHCIIB|Close_species|unknown|XP_xxxxx|predicted
+>TAP1|Gallus_gallus|TAP1|NP_xxxxx|complete
+>TAP2|Gallus_gallus|TAP2|NP_xxxxx|complete
+>TAPBP|Gallus_gallus|TAPBP|NP_xxxxx|complete
+
