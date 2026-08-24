@@ -1,7 +1,7 @@
-# Avian MHC reference-annotation pipeline
+# MHC reference-annotation pipeline
 
 A reproducible discovery and evidence-integration workflow for annotating major
-histocompatibility complex (MHC) genes in bird reference genomes.
+histocompatibility complex (MHC) genes in reference genomes.
 
 The workflow supports genomes **with or without an existing annotation**:
 
@@ -13,11 +13,11 @@ The workflow supports genomes **with or without an existing annotation**:
 5. The resulting evidence package is reviewed manually and converted into a curated GFF3.
 
 > This pipeline discovers and organizes evidence. It deliberately does not assign
-> definitive locus names or automatically declare pseudogenes. Avian MHC regions are
+> definitive locus names or automatically declare pseudogenes. MHC regions are
 > duplicated, polymorphic, and assembly-sensitive; final annotation requires biological
 > review, RNA/genomic-read evidence, phylogeny, and synteny.
 
-## Workflow
+## Workflow (e.g. Avian species)
 
 ```text
 Related-bird MHC proteins
