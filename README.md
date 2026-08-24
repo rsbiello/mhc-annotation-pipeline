@@ -48,7 +48,7 @@ Related-bird MHC proteins
 ## Repository layout
 
 ```text
-avian-mhc-annotation-pipeline/
+mhc-annotation-pipeline/
 ├── README.md
 ├── LICENSE
 ├── CITATION.cff
@@ -91,7 +91,7 @@ git clone https://github.com/YOUR_USERNAME/avian-mhc-annotation-pipeline.git
 cd avian-mhc-annotation-pipeline
 
 mamba env create -f envs/mhc.yaml
-conda activate avian-mhc-annotation
+conda activate mhc-annotation
 ```
 
 Alternatively, let Snakemake create rule-specific environments with `--use-conda`.
