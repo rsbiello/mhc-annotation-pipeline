@@ -20,7 +20,7 @@ The workflow supports genomes **with or without an existing annotation**:
 ## Workflow (e.g. Avian species)
 
 ```text
-Related-bird MHC proteins
+Related MHC proteins
        |                         Existing annotation (optional)
        |                                      |
        |                                  BLASTP audit
