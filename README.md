@@ -87,8 +87,8 @@ The supplied Conda environment contains:
 ## Installation
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/avian-mhc-annotation-pipeline.git
-cd avian-mhc-annotation-pipeline
+git clone https://github.com/YOUR_USERNAME/mhc-annotation-pipeline.git
+cd mhc-annotation-pipeline
 
 mamba env create -f envs/mhc.yaml
 conda activate mhc-annotation
