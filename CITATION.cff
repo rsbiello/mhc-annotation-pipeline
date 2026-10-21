@@ -6,7 +6,7 @@ version: 0.1.0
 date-released: 2026-08-24
 license: MIT
 authors:
-  - family-names: "Your surname"
-    given-names: "Your given name"
+  - family-names: "Biello"
+    given-names: "Roberto"
 repository-code: "https://github.com/YOUR_USERNAME/avian-mhc-annotation-pipeline"
 
